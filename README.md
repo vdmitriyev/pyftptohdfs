@@ -17,3 +17,8 @@ stats copy_from_ftp
 stats merge_files
 stats copy_to_hdfs
 ```
+
+### Dependencies
+
+* Windows
+    + 'sh' must be installed on machine

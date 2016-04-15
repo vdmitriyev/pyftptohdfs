@@ -13,6 +13,7 @@ import os
 import sys
 import uuid
 import argparse
+import platform
 import subprocess
 
 from ftplib import FTP
@@ -24,11 +25,11 @@ default_ftp_password = 'anonymous'
 default_ftp_target_folder = '/'
 default_hdfs_target_path = '/tmp/'
 default_hdfs_target_folder = 'pyftptohdfs'
-default_hfds_host = 'localhost'
-default_hfds_port = 8020
+# default_hfds_host = 'localhost'
+# default_hfds_port = 8020
 
 # settings
-file_size_limit_mb = 10
+file_size_limit_mb = 2
 file_size_limit_b = file_size_limit_mb * 1014 * 1024
 
 def launch_bash_command(params, msg=None, info_only=False):
@@ -68,7 +69,7 @@ def copy_from_ftp(params):
     ftp.cwd(ftp_target_folder)
     ftp_files_list = []
     ftp.dir(ftp_files_list.append)
-    print ('\n'.join(ftp_files_list))
+    #print ('\n'.join(ftp_files_list))
 
     # verifying target directory on local machine
     local_target = 'dwn' + str(uuid.uuid4())[:4]
@@ -88,9 +89,9 @@ def copy_from_ftp(params):
         else:
             print ('[i] file was ignored because of size or type, name {0}'.format(file_name))
 
-
-
     ftp.quit()
+
+    return local_target
 
 def copy_to_hdfs(params):
     """ Copy to HDFS"""
@@ -112,7 +113,7 @@ def copy_to_hdfs(params):
     #     print (x['path'])
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    local_path = os.path.join(current_dir, params['ftp_target_folder'])
+    local_path = os.path.join(current_dir, params['local_target'])
     hdfs_path = os.path.join(params['hdfs_target_path'], params['hdfs_target_folder'])
     hdfs_path_dest = os.path.join(hdfs_path, str(uuid.uuid1())[:4])
 
@@ -133,7 +134,7 @@ def merge_files(params):
         INPUT={input}
         FILES_DELIMETER="<-----filescontentdelimeter----->"
         MERGED=merged_files_generated
-        EXTENSION=xml
+        EXTENSION=*
 
         echo $MERGED
 
@@ -144,7 +145,7 @@ def merge_files(params):
 
         for i in $INPUT/*.$EXTENSION; do echo  "$FILES_DELIMETER"; echo  "<-----$i----->"; cat "$i"; done > $INPUT/$MERGED"""
 
-    target_dir = params['ftp_target_folder']
+    target_dir = params['local_target']
     bash_file_name = 'files_merger_generated.sh'
     bash_content = bash_content.format(input=target_dir)
 
@@ -152,13 +153,18 @@ def merge_files(params):
     with open(bash_file_name, 'w') as the_file:
         the_file.write(bash_content)
 
-    launch_bash_command(['chmod', '+x', '{file}'.format(file=bash_file_name)], msg = "Creating bash file with merger.")
-    launch_bash_command(['./' + bash_file_name, target_dir + '/'], msg = "Launching bash file with merger.")
+    if platform.system() == 'Linux':
+        launch_bash_command(['chmod', '+x', '{file}'.format(file=bash_file_name)], msg = "Creating bash file with merger.")
+        launch_bash_command(['./' + bash_file_name, target_dir + '/'], msg = "Launching bash file with merger.")
+
+    if platform.system() == 'Windows':
+        launch_bash_command(['sh ' + bash_file_name, target_dir + '/'], msg = "Launching bash file with merger.")
 
 def main(params):
     """ Main method """
 
-    copy_from_ftp(params)
+    local_target = copy_from_ftp(params)
+    params["local_target"] = local_target
 
     if not params['downloadonly']:
         merge_files(params)

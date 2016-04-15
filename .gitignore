@@ -3,4 +3,4 @@
 *.profile
 pyftptohdfs/dwn*
 pyftptohdfs/test/*
-pyftptohdfs/xml_merger_generated.sh
+pyftptohdfs/files_merger_generated.sh
