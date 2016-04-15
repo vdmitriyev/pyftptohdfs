@@ -1,5 +1,6 @@
 *.log
 *.pyc
 *.profile
+pyftptohdfs/dwn*
 pyftptohdfs/test/*
 pyftptohdfs/xml_merger_generated.sh

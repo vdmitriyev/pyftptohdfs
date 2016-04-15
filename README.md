@@ -7,7 +7,7 @@ Porting files from FTP to HDFS via Python. Must be run on Hadoop cluster with ac
 * Change configurations inside 'pyftptohdfs.py' (e.g. credentials) or use command line to pass them
 * Run
 ```
-python pyftptohdfs.py
+python pyftptohdfs.py --downloadonly
 ```
 * Possible measurement of performance manually
 ```
