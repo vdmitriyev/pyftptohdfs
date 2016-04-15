@@ -12,6 +12,7 @@ __description__ = 'Transporting files from FTP to HDFS'
 import os
 import sys
 import uuid
+import shutil
 import argparse
 import platform
 import subprocess
@@ -58,7 +59,14 @@ def getbinary(ftp, filename, outfile=None):
     ftp.retrbinary("RETR " + filename, outfile.write)
 
 def copy_from_ftp(params):
-    """ Copy files from FTP """
+    """ Copy files from FTP
+
+            Args:
+                  params :  set of params from command line or default
+
+            Returns:
+                  local_target: local temporary folder with files from FTP
+    """
 
     ftp = FTP(params['ftp_ip'])
     ftp.login(params['ftp_user'], params['ftp_password'])
@@ -94,7 +102,14 @@ def copy_from_ftp(params):
     return local_target
 
 def copy_to_hdfs(params):
-    """ Copy to HDFS"""
+    """ Copy files to HDFS
+
+            Args:
+                  params :  set of params from command line or default
+
+            Returns:
+                  None
+    """
 
     # from hdfs3 import HDFileSystem
     # hdfs = HDFileSystem(host=hfds_host, port=hfds_port)
@@ -127,7 +142,14 @@ def copy_to_hdfs(params):
                         msg = '[i] copying files from from local to remote HDFS\n \t local: {0}\n \t HDFS: {1}'.format(local_path, hdfs_path_dest))
 
 def merge_files(params):
-    """ Merging downloaded files"""
+    """ Merging downloaded files via command line
+
+            Args:
+                  params :  set of params from command line or default
+
+            Returns:
+                  None
+    """
 
     bash_content = """#!/bin/bash
 
@@ -160,6 +182,24 @@ def merge_files(params):
     if platform.system() == 'Windows':
         launch_bash_command(['sh ' + bash_file_name, target_dir + '/'], msg = "Launching bash file with merger.")
 
+def clear_tmp_local_folder(params):
+    """  Clear temporary local folder
+
+            Args:
+                  params :  set of params from command line or default
+
+            Returns:
+                  None
+    """
+
+    directory = params['local_target']
+    for root, dirs, files in os.walk(directory):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+
+
 def main(params):
     """ Main method """
 
@@ -169,6 +209,10 @@ def main(params):
     if not params['downloadonly']:
         merge_files(params)
         copy_to_hdfs(params)
+
+    if params['clearlocal']:
+        print ('[i] clear tmp local folder {0}'.format(params["local_target"]))
+        clear_tmp_local_folder(params)
 
 if __name__ == '__main__':
 
@@ -180,7 +224,6 @@ if __name__ == '__main__':
 
     # fetching input parameters
     parser = argparse.ArgumentParser(description=__description__)
-    #args = {}
 
     # ftp_ip
     parser.add_argument(
@@ -212,6 +255,13 @@ if __name__ == '__main__':
         action='store_true',
         help='downloads only from FTP , default: {0}'.format(False))
     parser.set_defaults(downloadonly=False)
+
+    # clearlocal
+    parser.add_argument(
+        '--clearlocal',
+        action='store_true',
+        help='clears downloaded locally from FTP , default: {0}'.format(False))
+    parser.set_defaults(clearlocal=False)
 
     # hdfs_target_path
     parser.add_argument(
