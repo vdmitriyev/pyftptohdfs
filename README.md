@@ -11,7 +11,7 @@ python pyftptohdfs.py --downloadonly
 python pyftptohdfs.py --clearlocal
 ```
 
-* Possible measurement of performance manually
+* Possible measurement of performance manually, additionally review ```readablestats.py```
 ```
 python -m cProfile -o pyaxtTimeStats.profile pyftptohdfs.py
 python -m pstats pyaxtTimeStats.profile copy_from_ftp
